@@ -1,0 +1,1 @@
+# zabbix-externalscript-vsphere

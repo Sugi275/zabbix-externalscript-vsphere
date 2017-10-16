@@ -13,7 +13,8 @@ from tools import cli
 class VMwareClient(object):
 
     def __init__(self, logger, args):
-        # log設定
+        # log設定。呼び出し元で指定したログファイルに出力する
+        # 呼び出し元で出力ファイルを変更することで、使い回しをしても任意のログファイルへ出力出来ることを意図した
         self.logger = logger
         self.connect_vmware(args)
 

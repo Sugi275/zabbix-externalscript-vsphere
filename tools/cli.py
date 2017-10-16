@@ -21,7 +21,6 @@ import getpass
 
 __author__ = "VMware, Inc."
 
-
 def build_arg_parser():
     """
     Builds a standard argument parser with arguments for talking to vCenter

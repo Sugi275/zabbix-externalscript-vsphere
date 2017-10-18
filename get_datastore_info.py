@@ -15,7 +15,7 @@ import os
 import sys
 
 
-class GetVsanCapacity(object):
+class GetDatastoreInfo(object):
 
     def __init__(self):
 	self._log_setting()
@@ -23,9 +23,10 @@ class GetVsanCapacity(object):
     # log出力設定 10MBの5世代保管
     def _log_setting(self):
 
-        logpath = os.path.abspath(os.path.dirname(__file__))
+        #logpath = os.path.abspath(os.path.dirname(__file__))
+        logpath = "/var/log/zabbix_externalscripts"
 
-        logpath = logpath + "/log_get_vsan_capacity.txt"
+        logpath = logpath + "/get_datastore_info.txt"
         self.logger = getLogger(__name__)
         handler = RotatingFileHandler(
             filename=logpath,
@@ -65,6 +66,19 @@ class GetVsanCapacity(object):
         else:
             return None
 
+    # 単位を補正
+    def sizeof_fmt(self, num):
+        """
+        Returns the human readable version of a file size
+        :param num:
+        :return:
+        """
+        for item in ['bytes', 'KB', 'MB', 'GB']:
+            if num < 1024.0:
+                return "%3.1f%s" % (num, item)
+            num /= 1024.0
+        return "%3.1f%s" % (num, 'TB')
+
     def print_datastore_info(self, ds_obj, column):
         summary = ds_obj.summary
         #self.logger.info("summary = " + str(summary))
@@ -74,20 +88,32 @@ class GetVsanCapacity(object):
 
         capacity_bytes = summary.capacity
         datastore["capacity_bytes"] = capacity_bytes
+        datastore["capacity_bytes_pretty"] = self.sizeof_fmt(capacity_bytes)
 
         freespace_bytes = summary.freeSpace
         datastore["freespace_bytes"] = freespace_bytes
+        datastore["freespace_bytes_pretty"] = self.sizeof_fmt(freespace_bytes)
+
+        used_bytes = capacity_bytes - freespace_bytes
+        datastore["used_bytes"] = used_bytes
+        datastore["used_bytes_pretty"] = self.sizeof_fmt(used_bytes)
+
+        used_pct = (used_bytes * 100) / capacity_bytes
+        datastore["used_pct"] = used_pct
 
         uncommitted_bytes = summary.uncommitted if summary.uncommitted else 0
         datastore["uncommitted_bytes"] = uncommitted_bytes
+        datastore["uncommitted_bytes_pretty"] = self.sizeof_fmt(uncommitted_bytes)
 
         provisioned_bytes = capacity_bytes - freespace_bytes + uncommitted_bytes
         datastore["provisioned_bytes"] = provisioned_bytes
+        datastore["provisioned_bytes_pretty"] = self.sizeof_fmt(provisioned_bytes)
 
         # オーバーコミットしていない場合は、マイナスは出さずに0bytesとする
         overprovisioned_bytes = provisioned_bytes - capacity_bytes
         overprovisioned_bytes = overprovisioned_bytes if overprovisioned_bytes >= 0 else 0
         datastore["overprovisioned_bytes"] = overprovisioned_bytes
+        datastore["overprovisioned_bytes_pretty"] = self.sizeof_fmt(overprovisioned_bytes)
 
         # 実量量と消費量が同一の場合を100%とする。つまり、100%を超えるとオーバーコミットとなっていると判断できる
         overprovisioned_pct = (provisioned_bytes * 100) / capacity_bytes
@@ -126,5 +152,5 @@ class GetVsanCapacity(object):
 
 
 if __name__ == '__main__':
-    get_vsan_capacity = GetVsanCapacity()
-    get_vsan_capacity.main()
+    get_datastore_info = GetDatastoreInfo()
+    get_datastore_info.main()
